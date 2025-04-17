@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anomaly Detection Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --background-color: #f8f9fa;
+            --card-background: #ffffff;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-color);
+            color: #2b2d42;
+        }
+
+        .navbar {
+            background-color: var(--primary-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 600;
+            color: white !important;
+        }
+
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            background-color: var(--card-background);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            background-color: transparent;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            padding: 15px 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card h3 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            margin-bottom: 0;
+            opacity: 0.9;
+        }
+
+        .plot-container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+
+        .sidebar {
+            background-color: var(--card-background);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .sidebar h5 {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .nav-pills .nav-link.active {
+            background-color: var(--primary-color);
+        }
+
+        .nav-pills .nav-link {
+            color: #2b2d42;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-graph-up"></i> Anomaly Detection Dashboard
+            </a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row">
+            <!-- Main Content -->
+            <div class="col-lg-9">
+                <!-- Overview Section -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <h3>{{ count }}</h3>
+                            <p>Total Data Points</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <h3>{{ total_anomalies_iso }}</h3>
+                            <p>Isolation Forest Anomalies</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <h3>{{ total_anomalies_svm }}</h3>
+                            <p>SVM Anomalies</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <h3>{{ total_anomalies_kmeans }}</h3>
+                            <p>K-means Anomalies</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Original Data Plot -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Original Data</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="plot-container">
+                            {{ original_plot|safe }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Anomaly Detection Results -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Anomaly Detection Results</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="nav nav-pills mb-3" id="anomalyTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="kmeans-tab" data-bs-toggle="pill" data-bs-target="#kmeans" type="button" role="tab">K-means</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="isolation-tab" data-bs-toggle="pill" data-bs-target="#isolation" type="button" role="tab">Isolation Forest</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="svm-tab" data-bs-toggle="pill" data-bs-target="#svm" type="button" role="tab">SVM</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="lof-tab" data-bs-toggle="pill" data-bs-target="#lof" type="button" role="tab">LOF</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="hmm-tab" data-bs-toggle="pill" data-bs-target="#hmm" type="button" role="tab">HMM</button>
+                            </li>
+                        </ul>
+                        <div class="tab-content" id="anomalyTabsContent">
+                            <div class="tab-pane fade show active" id="kmeans" role="tabpanel">
+                                <div class="plot-container">
+                                    {{ plot_kmeans|safe }}
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="isolation" role="tabpanel">
+                                <div class="plot-container">
+                                    {{ plot_if|safe }}
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="svm" role="tabpanel">
+                                <div class="plot-container">
+                                    {{ plot_svm|safe }}
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="lof" role="tabpanel">
+                                <div class="plot-container">
+                                    {{ plot_lof|safe }}
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="hmm" role="tabpanel">
+                                <div class="plot-container">
+                                    {{ plot_hmm|safe }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-3">
+                <div class="sidebar">
+                    <h5 class="mb-4">Statistics</h5>
+                    <div class="mb-4">
+                        <h6>Descriptive Statistics</h6>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><strong>Mean:</strong> {{ mean }}</li>
+                            <li class="mb-2"><strong>Median:</strong> {{ median }}</li>
+                            <li class="mb-2"><strong>Std Dev:</strong> {{ std }}</li>
+                            <li class="mb-2"><strong>Min:</strong> {{ min_val }}</li>
+                            <li class="mb-2"><strong>Max:</strong> {{ max_val }}</li>
+                            <li class="mb-2"><strong>Q1:</strong> {{ q25 }}</li>
+                            <li class="mb-2"><strong>Q3:</strong> {{ q75 }}</li>
+                        </ul>
+                    </div>
+                    <div class="mb-4">
+                        <h6>Anomaly Percentages</h6>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><strong>Isolation Forest:</strong> {{ percentage_anomalies_iso }}%</li>
+                            <li class="mb-2"><strong>SVM:</strong> {{ percentage_anomalies_svm }}%</li>
+                            <li class="mb-2"><strong>K-means:</strong> {{ percentage_anomalies_kmeans }}%</li>
+                            <li class="mb-2"><strong>LOF:</strong> {{ percentage_anomalies_lof }}%</li>
+                        </ul>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('download_file', filename=export_filename) }}" class="btn btn-primary">
+                            <i class="bi bi-download"></i> Download Processed Data
+                        </a>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-arrow-left"></i> Back to Upload
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    </script>
+</body>
+</html> 
