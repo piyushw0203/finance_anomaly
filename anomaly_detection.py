@@ -18,7 +18,7 @@ def detect_anomalies_kmeans(data):
 
 def detect_anomalies_if(data):
     # Isolation Forest
-    model_if = IsolationForest(contamination=0.05)
+    model_if = IsolationForest(contamination=0.02)
     model_if.fit(data)
     data['Anomaly_IF'] = model_if.predict(data)
     anomalies_if = data[data['Anomaly_IF'] == -1]
@@ -26,7 +26,7 @@ def detect_anomalies_if(data):
 
 def detect_anomalies_svm(data):
     # One-Class SVM
-    model_svm = OneClassSVM(nu=0.05)
+    model_svm = OneClassSVM(nu=0.5)
     model_svm.fit(data)
     data['Anomaly_SVM'] = model_svm.predict(data)
     anomalies_svm = data[data['Anomaly_SVM'] == -1]

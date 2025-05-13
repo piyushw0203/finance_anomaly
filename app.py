@@ -15,6 +15,7 @@ import numpy as np
 from sklearn.neighbors import LocalOutlierFactor
 from hmmlearn.hmm import GaussianHMM
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
+from data_validation import validate_column_relationship
 
 
 
@@ -87,11 +88,58 @@ def process_file():
     filename = request.form.get('filename')
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
 
-    # Read the data using the user-selected columns
-    data = read_uploaded_file(filepath)[[time_column, value_column]]
+    # Read the original data
+    original_data = read_uploaded_file(filepath)
+    
+    # Validate column selection
+    validation_results = validate_column_relationship(original_data, time_column, value_column)
+    
+    # If there are critical warnings, show them to the user
+    critical_warnings = [w for w in validation_results['warnings'] 
+                        if any(crit in w.lower() for crit in ['not in a valid time format', 'not numeric'])]
+    
+    if critical_warnings:
+        return render_template('error.html', 
+                             warnings=critical_warnings,
+                             columns=original_data.columns.tolist(),
+                             filename=filename)
+    
+    # Process the data
+    data = original_data[[time_column, value_column]].copy()
+    
+    # Show warnings if any, but allow proceeding
+    if validation_results['warnings']:
+        return render_template('warnings.html',
+                             warnings=validation_results['warnings'],
+                             data_preview=data.head().to_html(),
+                             time_stats=validation_results['time_column'],
+                             value_stats=validation_results['value_column'],
+                             filename=filename,
+                             time_column=time_column,
+                             value_column=value_column)
+
+    # Continue with existing processing
+    original_count = len(original_data)
+    print(f"Original data count: {original_count}")  # Debug print
+
+    # Process the data
+    data = original_data[[time_column, value_column]].copy()  # Use copy to avoid SettingWithCopyWarning
+    count_before_index = len(data)
+    print(f"Count before setting index: {count_before_index}")  # Debug print
+    
     data.set_index(time_column, inplace=True)
     data.columns = ['Value']
+    
+    # Count before and after filling missing values
+    count_before_fill = data['Value'].count()
+    print(f"Count before filling missing values: {count_before_fill}")  # Debug print
+    
     data.fillna(method='ffill', inplace=True)
+    final_count = len(data)
+    print(f"Final count after processing: {final_count}")  # Debug print
+
+    # Use the final count for calculations
+    count = final_count
 
     def plot_anomalies(data, anomalies, method_name):
         """Function to create plots with anomalies highlighted"""
@@ -143,13 +191,13 @@ def process_file():
     data = data.dropna()
 
     # Isolation Forest
-    model_if = IsolationForest(contamination=0.05)
+    model_if = IsolationForest(contamination=0.01)
     data['anomaly_if'] = model_if.fit_predict(data[['Value', 'rolling_mean', 'rolling_std', 'z_score']])
     anomalies_if = data[data['anomaly_if'] == -1]
     plot_if = plot_anomalies(data, anomalies_if, 'Isolation Forest')
 
     # One-Class SVM
-    model_svm = OneClassSVM(nu=0.05)
+    model_svm = OneClassSVM(nu=0.03)
     data['anomaly_svm'] = model_svm.fit_predict(data[['Value']])
     anomalies_svm = data[data['anomaly_svm'] == -1]
     plot_svm = plot_anomalies(data, anomalies_svm, 'One-Class SVM')
@@ -192,7 +240,6 @@ def process_file():
     data['diff'] = data['Value'].diff()
     data['cumsum'] = data['Value'].cumsum()
     data['cumprod'] = (1 + data['Value']).cumprod()
-    count = data['Value'].count()
     mean = data['Value'].mean()
     median = data['Value'].median()
     std = data['Value'].std()
@@ -202,19 +249,19 @@ def process_file():
     q75 = data['Value'].quantile(0.75)
 
     # Anomaly Statistics
-    total_anomalies_iso = data['anomaly_if'].sum()
+    total_anomalies_iso = len(data[data['anomaly_if'] == -1])
     percentage_anomalies_iso = (total_anomalies_iso / count) * 100
 
-    total_anomalies_svm = data['anomaly_svm'].sum()
+    total_anomalies_svm = len(data[data['anomaly_svm'] == -1])
     percentage_anomalies_svm = (total_anomalies_svm / count) * 100
 
-    total_anomalies_kmeans = data['anomaly_kmeans'].sum()
+    total_anomalies_kmeans = len(data[data['anomaly_kmeans'] == 1])
     percentage_anomalies_kmeans = (total_anomalies_kmeans / count) * 100
 
-    total_anomalies_dbscan = data['anomaly_dbscan'].sum()
+    total_anomalies_dbscan = len(data[data['anomaly_dbscan'] == -1])
     percentage_anomalies_dbscan = (total_anomalies_dbscan / count) * 100
 
-    total_anomalies_lof = data['anomaly_lof'].sum()
+    total_anomalies_lof = len(data[data['anomaly_lof'] == -1])
     percentage_anomalies_lof = (total_anomalies_lof / count) * 100
 
    
@@ -275,6 +322,9 @@ def process_file():
                            plot_hmm=plot_hmm,
                            export_filename=export_filename,
                            count=count,
+                           original_count=original_count,
+                           count_before_index=count_before_index,
+                           count_before_fill=count_before_fill,
                            mean=mean,
                            median=median,
                            std=std,
@@ -290,8 +340,7 @@ def process_file():
                            percentage_anomalies_kmeans=percentage_anomalies_kmeans,
                            total_anomalies_dbscan=total_anomalies_dbscan,
                            percentage_anomalies_dbscan=percentage_anomalies_dbscan,
-                           percentage_anomalies_lof=percentage_anomalies_lof
-                           )
+                           percentage_anomalies_lof=percentage_anomalies_lof)
 
 @app.route('/download/<filename>')
 def download_file(filename):

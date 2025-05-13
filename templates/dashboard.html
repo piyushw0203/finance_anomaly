@@ -123,7 +123,7 @@
                     <div class="col-md-3">
                         <div class="stat-card">
                             <h3>{{ count }}</h3>
-                            <p>Total Data Points</p>
+                            <p>Total Data Points (Final)</p>
                         </div>
                     </div>
                     <div class="col-md-3">
@@ -142,6 +142,33 @@
                         <div class="stat-card">
                             <h3>{{ total_anomalies_kmeans }}</h3>
                             <p>K-means Anomalies</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Processing Information -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Data Processing Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Data Counts at Different Stages</h6>
+                                <ul class="list-unstyled">
+                                    <li class="mb-2"><strong>Original Data Count:</strong> {{ original_count }}</li>
+                                    <li class="mb-2"><strong>After Column Selection:</strong> {{ count_before_index }}</li>
+                                    <li class="mb-2"><strong>Before Filling Missing Values:</strong> {{ count_before_fill }}</li>
+                                    <li class="mb-2"><strong>Final Count:</strong> {{ count }}</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Data Quality Metrics</h6>
+                                <ul class="list-unstyled">
+                                    <li class="mb-2"><strong>Missing Values Filled:</strong> {{ count_before_index - count_before_fill }}</li>
+                                    <li class="mb-2"><strong>Data Loss:</strong> {{ original_count - count }}</li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
