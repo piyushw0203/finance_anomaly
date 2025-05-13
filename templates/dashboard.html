@@ -237,6 +237,23 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Common Anomalies -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4>Common Anomalies Detected by All Algorithms</h4>
+                            </div>
+                            <div class="card-body">
+                                <p>Total common anomalies: {{ common_anomalies_count }} ({{ "%.2f"|format(percentage_common_anomalies) }}% of total data points)</p>
+                                <div class="table-responsive">
+                                    {{ common_anomalies_table|safe }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Sidebar -->

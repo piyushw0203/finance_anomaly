@@ -15,7 +15,6 @@ import numpy as np
 from sklearn.neighbors import LocalOutlierFactor
 from hmmlearn.hmm import GaussianHMM
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
-from data_validation import validate_column_relationship
 
 
 
@@ -88,37 +87,8 @@ def process_file():
     filename = request.form.get('filename')
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
 
-    # Read the original data
+    # Read the original data and get initial counts
     original_data = read_uploaded_file(filepath)
-    
-    # Validate column selection
-    validation_results = validate_column_relationship(original_data, time_column, value_column)
-    
-    # If there are critical warnings, show them to the user
-    critical_warnings = [w for w in validation_results['warnings'] 
-                        if any(crit in w.lower() for crit in ['not in a valid time format', 'not numeric'])]
-    
-    if critical_warnings:
-        return render_template('error.html', 
-                             warnings=critical_warnings,
-                             columns=original_data.columns.tolist(),
-                             filename=filename)
-    
-    # Process the data
-    data = original_data[[time_column, value_column]].copy()
-    
-    # Show warnings if any, but allow proceeding
-    if validation_results['warnings']:
-        return render_template('warnings.html',
-                             warnings=validation_results['warnings'],
-                             data_preview=data.head().to_html(),
-                             time_stats=validation_results['time_column'],
-                             value_stats=validation_results['value_column'],
-                             filename=filename,
-                             time_column=time_column,
-                             value_column=value_column)
-
-    # Continue with existing processing
     original_count = len(original_data)
     print(f"Original data count: {original_count}")  # Debug print
 
@@ -264,7 +234,43 @@ def process_file():
     total_anomalies_lof = len(data[data['anomaly_lof'] == -1])
     percentage_anomalies_lof = (total_anomalies_lof / count) * 100
 
-   
+    # Find common anomalies across all algorithms
+    data['common_anomaly'] = (
+        (data['anomaly_if'] == -1) & 
+        (data['anomaly_svm'] == -1) & 
+        (data['anomaly_kmeans'] == 1) & 
+        (data['anomaly_dbscan'] == -1) & 
+        (data['anomaly_lof'] == -1)
+    )
+    
+    # Debug prints to check anomaly counts
+    print("Isolation Forest anomalies:", len(data[data['anomaly_if'] == -1]))
+    print("SVM anomalies:", len(data[data['anomaly_svm'] == -1]))
+    print("K-means anomalies:", len(data[data['anomaly_kmeans'] == 1]))
+    print("DBSCAN anomalies:", len(data[data['anomaly_dbscan'] == -1]))
+    print("LOF anomalies:", len(data[data['anomaly_lof'] == -1]))
+    
+    # Create a more lenient common anomaly detection
+    # Consider an anomaly if it's detected by at least 3 algorithms
+    data['anomaly_count'] = (
+        (data['anomaly_if'] == -1).astype(int) +
+        (data['anomaly_svm'] == -1).astype(int) +
+        (data['anomaly_kmeans'] == 1).astype(int) +
+        (data['anomaly_dbscan'] == -1).astype(int) +
+        (data['anomaly_lof'] == -1).astype(int)
+    )
+    
+    # Mark as common anomaly if detected by at least 3 algorithms
+    data['common_anomaly'] = data['anomaly_count'] >= 3
+    
+    common_anomalies = data[data['common_anomaly'] == True].sort_index()
+    common_anomalies_count = len(common_anomalies)
+    percentage_common_anomalies = (common_anomalies_count / count) * 100
+
+    # Create a table of common anomalies with more information
+    common_anomalies_table = common_anomalies[['Value', 'anomaly_count']].reset_index()
+    common_anomalies_table.columns = ['Date', 'Value', 'Number of Algorithms Detected']
+    common_anomalies_table = common_anomalies_table.to_html(classes='table table-striped', index=False)
 
     # Plot original data
     original_plot = plot_original_data(data)
@@ -340,7 +346,11 @@ def process_file():
                            percentage_anomalies_kmeans=percentage_anomalies_kmeans,
                            total_anomalies_dbscan=total_anomalies_dbscan,
                            percentage_anomalies_dbscan=percentage_anomalies_dbscan,
-                           percentage_anomalies_lof=percentage_anomalies_lof)
+                           percentage_anomalies_lof=percentage_anomalies_lof,
+                           common_anomalies_table=common_anomalies_table,
+                           common_anomalies_count=common_anomalies_count,
+                           percentage_common_anomalies=percentage_common_anomalies
+                           )
 
 @app.route('/download/<filename>')
 def download_file(filename):

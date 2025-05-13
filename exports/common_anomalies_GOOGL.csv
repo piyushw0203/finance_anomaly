@@ -1,0 +1,1 @@
+Date,Value,anomaly_kmeans,rolling_mean,rolling_std,z_score,anomaly_if,anomaly_svm,anomaly_lof,anomaly_dbscan,diff,cumsum,cumprod,common_anomaly
