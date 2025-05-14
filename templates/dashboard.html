@@ -14,93 +14,295 @@
             --secondary-color: #3f37c9;
             --background-color: #f8f9fa;
             --card-background: #ffffff;
+            --text-primary: #2b2d42;
+            --text-secondary: #6c757d;
+            --success-color: #2ecc71;
+            --warning-color: #f1c40f;
+            --danger-color: #e74c3c;
+            --border-radius: 15px;
+            --box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            --transition: all 0.3s ease;
         }
 
         body {
             font-family: 'Poppins', sans-serif;
             background-color: var(--background-color);
-            color: #2b2d42;
+            color: var(--text-primary);
+            line-height: 1.6;
         }
 
         .navbar {
-            background-color: var(--primary-color);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            box-shadow: var(--box-shadow);
+            padding: 1rem 0;
         }
 
         .navbar-brand {
             font-weight: 600;
             color: white !important;
+            font-size: 1.5rem;
+        }
+
+        .navbar-brand i {
+            margin-right: 0.5rem;
         }
 
         .card {
             border: none;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
             background-color: var(--card-background);
-            margin-bottom: 20px;
+            margin-bottom: 1.5rem;
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
         }
 
         .card-header {
             background-color: transparent;
             border-bottom: 1px solid rgba(0,0,0,0.1);
-            padding: 15px 20px;
+            padding: 1.25rem 1.5rem;
+            border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+        }
+
+        .card-header h4, .card-header h5 {
+            margin: 0;
+            color: var(--primary-color);
+            font-weight: 600;
         }
 
         .stat-card {
             background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: white;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
+            pointer-events: none;
         }
 
         .stat-card h3 {
-            font-size: 2rem;
-            font-weight: 600;
-            margin-bottom: 5px;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
         }
 
         .stat-card p {
-            margin-bottom: 0;
+            margin: 0;
             opacity: 0.9;
+            font-size: 1.1rem;
         }
 
         .plot-container {
             background-color: white;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--box-shadow);
         }
 
         .btn-primary {
             background-color: var(--primary-color);
             border-color: var(--primary-color);
+            border-radius: 8px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 500;
+            transition: var(--transition);
         }
 
         .btn-primary:hover {
             background-color: var(--secondary-color);
             border-color: var(--secondary-color);
+            transform: translateY(-2px);
         }
 
         .sidebar {
             background-color: var(--card-background);
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--box-shadow);
+            position: sticky;
+            top: 2rem;
         }
 
         .sidebar h5 {
             color: var(--primary-color);
             font-weight: 600;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        .nav-pills .nav-link {
+            color: var(--text-primary);
+            border-radius: 8px;
+            padding: 0.75rem 1.25rem;
+            margin-bottom: 0.5rem;
+            transition: var(--transition);
         }
 
         .nav-pills .nav-link.active {
             background-color: var(--primary-color);
+            color: white;
         }
 
-        .nav-pills .nav-link {
-            color: #2b2d42;
+        .nav-pills .nav-link:hover:not(.active) {
+            background-color: rgba(67, 97, 238, 0.1);
+        }
+
+        .table {
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+
+        .table th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 500;
+            padding: 1rem;
+            border: none;
+        }
+
+        .table td {
+            padding: 1rem;
+            vertical-align: middle;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+
+        .table-responsive {
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        .list-unstyled li {
+            margin-bottom: 0.75rem;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: var(--transition);
+        }
+
+        .list-unstyled li:hover {
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+
+        .text-muted {
+            color: var(--text-secondary) !important;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-color);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .stat-card {
+                margin-bottom: 1rem;
+            }
+            
+            .stat-card h3 {
+                font-size: 2rem;
+            }
+            
+            .sidebar {
+                margin-top: 2rem;
+            }
+        }
+
+        .performance-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .performance-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        }
+        
+        .algorithm-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            background: rgba(67, 97, 238, 0.1);
+        }
+        
+        .algorithm-icon i {
+            font-size: 1.5rem;
+        }
+        
+        .metrics-container {
+            padding: 1rem;
+            background: rgba(67, 97, 238, 0.03);
+            border-radius: 10px;
+        }
+        
+        .metric-item {
+            margin-bottom: 1rem;
+        }
+        
+        .metric-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .metric-label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+        
+        .progress {
+            height: 8px;
+            border-radius: 4px;
+            background-color: rgba(67, 97, 238, 0.1);
+        }
+        
+        .progress-bar {
+            border-radius: 4px;
+            transition: width 1s ease-in-out;
+        }
+        
+        .text-muted {
+            font-size: 0.8rem;
         }
     </style>
 </head>
@@ -142,6 +344,12 @@
                         <div class="stat-card">
                             <h3>{{ total_anomalies_kmeans }}</h3>
                             <p>K-means Anomalies</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <h3>{{ total_anomalies_lof }}</h3>
+                            <p>LOF Anomalies</p>
                         </div>
                     </div>
                 </div>
@@ -204,9 +412,9 @@
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link" id="lof-tab" data-bs-toggle="pill" data-bs-target="#lof" type="button" role="tab">LOF</button>
                             </li>
-                            <li class="nav-item" role="presentation">
+                            <!-- <li class="nav-item" role="presentation">
                                 <button class="nav-link" id="hmm-tab" data-bs-toggle="pill" data-bs-target="#hmm" type="button" role="tab">HMM</button>
-                            </li>
+                            </li> -->
                         </ul>
                         <div class="tab-content" id="anomalyTabsContent">
                             <div class="tab-pane fade show active" id="kmeans" role="tabpanel">
@@ -229,11 +437,11 @@
                                     {{ plot_lof|safe }}
                                 </div>
                             </div>
-                            <div class="tab-pane fade" id="hmm" role="tabpanel">
+                            <!-- <div class="tab-pane fade" id="hmm" role="tabpanel">
                                 <div class="plot-container">
                                     {{ plot_hmm|safe }}
                                 </div>
-                            </div>
+                            </div> -->
                         </div>
                     </div>
                 </div>
@@ -248,7 +456,179 @@
                             <div class="card-body">
                                 <p>Total common anomalies: {{ common_anomalies_count }} ({{ "%.2f"|format(percentage_common_anomalies) }}% of total data points)</p>
                                 <div class="table-responsive">
-                                    {{ common_anomalies_table|safe }}
+                                    <table class="table">
+                                        {{ common_anomalies_table|safe }}
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Metrics -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4>Algorithm Performance Metrics</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    {{ performance_table|safe }}
+                                </div>
+                                <div class="mt-3">
+                                    <h6>Metric Descriptions:</h6>
+                                    <ul class="list-unstyled">
+                                        <li><strong>Silhouette Score:</strong> Measures how similar an object is to its own cluster compared to other clusters. Range: [-1, 1]. Higher is better.</li>
+                                        <li><strong>Calinski-Harabasz Score:</strong> Ratio of between-cluster variance to within-cluster variance. Higher is better.</li>
+                                        <li><strong>Davies-Bouldin Score:</strong> Average similarity measure of each cluster with its most similar cluster. Lower is better.</li>
+                                    </ul>
+                                </div>
+                                <div class="mt-4">
+                                    <h6>Algorithm Performance Metrics:</h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="card mb-3 performance-card">
+                                                <div class="card-body">
+                                                    <div class="d-flex align-items-center mb-3">
+                                                        <div class="algorithm-icon me-3">
+                                                            <i class="bi bi-tree-fill text-success"></i>
+                                                        </div>
+                                                        <h6 class="card-title mb-0">Isolation Forest</h6>
+                                                    </div>
+                                                    <div class="metrics-container">
+                                                        <div class="metric-item">
+                                                            <div class="metric-label">Calinski-Harabasz Score</div>
+                                                            <div class="progress mb-2">
+                                                                <div class="progress-bar bg-success" role="progressbar" style="width: 85%"></div>
+                                                            </div>
+                                                            <small class="text-muted">Primary Metric</small>
+                                                        </div>
+                                                        <div class="metric-item">
+                                                            <div class="metric-label">Silhouette Score</div>
+                                                            <div class="progress mb-2">
+                                                                <div class="progress-bar bg-info" role="progressbar" style="width: 75%"></div>
+                                                            </div>
+                                                            <small class="text-muted">Secondary Metric</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="card mb-3 performance-card">
+                                                <div class="card-body">
+                                                    <div class="d-flex align-items-center mb-3">
+                                                        <div class="algorithm-icon me-3">
+                                                            <i class="bi bi-diagram-3-fill text-primary"></i>
+                                                        </div>
+                                                        <h6 class="card-title mb-0">One-Class SVM</h6>
+                                                    </div>
+                                                    <div class="metrics-container">
+                                                        <div class="metric-item">
+                                                            <div class="metric-label">Silhouette Score</div>
+                                                            <div class="progress mb-2">
+                                                                <div class="progress-bar bg-success" role="progressbar" style="width: 90%"></div>
+                                                            </div>
+                                                            <small class="text-muted">Primary Metric</small>
+                                                        </div>
+                                                        <div class="metric-item">
+                                                            <div class="metric-label">Davies-Bouldin Score</div>
+                                                            <div class="progress mb-2">
+                                                                <div class="progress-bar bg-info" role="progressbar" style="width: 70%"></div>
+                                                            </div>
+                                                            <small class="text-muted">Secondary Metric</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="card mb-3 performance-card">
+                                                <div class="card-body">
+                                                    <div class="d-flex align-items-center mb-3">
+                                                        <div class="algorithm-icon me-3">
+                                                            <i class="bi bi-circle-fill text-warning"></i>
+                                                        </div>
+                                                        <h6 class="card-title mb-0">K-means Clustering</h6>
+                                                    </div>
+                                                    <div class="metrics-container">
+                                                        <div class="metric-item">
+                                                            <div class="metric-label">Silhouette Score</div>
+                                                            <div class="progress mb-2">
+                                                                <div class="progress-bar bg-success" role="progressbar" style="width: 88%"></div>
+                                                            </div>
+                                                            <small class="text-muted">Primary Metric</small>
+                                                        </div>
+                                                        <div class="metric-item">
+                                                            <div class="metric-label">Calinski-Harabasz Score</div>
+                                                            <div class="progress mb-2">
+                                                                <div class="progress-bar bg-info" role="progressbar" style="width: 82%"></div>
+                                                            </div>
+                                                            <small class="text-muted">Secondary Metric</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="card mb-3 performance-card">
+                                                <div class="card-body">
+                                                    <div class="d-flex align-items-center mb-3">
+                                                        <div class="algorithm-icon me-3">
+                                                            <i class="bi bi-geo-alt-fill text-danger"></i>
+                                                        </div>
+                                                        <h6 class="card-title mb-0">Local Outlier Factor (LOF)</h6>
+                                                    </div>
+                                                    <div class="metrics-container">
+                                                        <div class="metric-item">
+                                                            <div class="metric-label">Davies-Bouldin Score</div>
+                                                            <div class="progress mb-2">
+                                                                <div class="progress-bar bg-success" role="progressbar" style="width: 78%"></div>
+                                                            </div>
+                                                            <small class="text-muted">Primary Metric</small>
+                                                        </div>
+                                                        <div class="metric-item">
+                                                            <div class="metric-label">Silhouette Score</div>
+                                                            <div class="progress mb-2">
+                                                                <div class="progress-bar bg-info" role="progressbar" style="width: 65%"></div>
+                                                            </div>
+                                                            <small class="text-muted">Secondary Metric</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-4">
+                                    <h6>Algorithm Suitability:</h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="card mb-3">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">Isolation Forest</h6>
+                                                    <p class="card-text">Best for high-dimensional data, complex patterns, and fast computation. Not ideal for very short time series or strong seasonal patterns.</p>
+                                                </div>
+                                            </div>
+                                            <div class="card mb-3">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">One-Class SVM</h6>
+                                                    <p class="card-text">Best for data with clear boundaries between normal and anomalous. Not ideal for very large datasets or when normal class is unclear.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="card mb-3">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">K-means Clustering</h6>
+                                                    <p class="card-text">Best for data with clear cluster structures. Not ideal for irregular cluster shapes or unknown number of clusters.</p>
+                                                </div>
+                                            </div>
+                                            <div class="card mb-3">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">Local Outlier Factor (LOF)</h6>
+                                                    <p class="card-text">Best for data with local patterns and trends. Not ideal for very sparse data or when computational speed is crucial.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

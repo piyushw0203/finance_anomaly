@@ -1,7 +1,7 @@
 import pandas as pd
 from sklearn.ensemble import IsolationForest
 from sklearn.svm import OneClassSVM
-from sklearn.cluster import DBSCAN, KMeans
+from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import LocalOutlierFactor
 
@@ -31,16 +31,6 @@ def detect_anomalies_svm(data):
     data['Anomaly_SVM'] = model_svm.predict(data)
     anomalies_svm = data[data['Anomaly_SVM'] == -1]
     return anomalies_svm
-
-def detect_anomalies_dbscan(data):
-    # DBSCAN
-    scaler = StandardScaler()
-    scaled_data = scaler.fit_transform(data)
-    model_dbscan = DBSCAN(eps=0.5, min_samples=5)
-    model_dbscan.fit(scaled_data)
-    data['Anomaly_DBSCAN'] = model_dbscan.labels_
-    anomalies_dbscan = data[data['Anomaly_DBSCAN'] == -1]
-    return anomalies_dbscan
 
 def detect_anomalies_lof(data):
     # Local Outlier Factor (LOF)

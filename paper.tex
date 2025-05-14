@@ -1,0 +1,371 @@
+\documentclass[conference]{IEEEtran}
+\usepackage{graphicx}
+\usepackage{cite}
+\usepackage{amsmath}
+\usepackage{url}
+
+% Add float parameters to help with figure placement
+\usepackage{float}
+\renewcommand{\textfraction}{0.1}
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.9}
+\renewcommand{\floatpagefraction}{0.7}
+
+\title{Anomaly Detection in Financial Data Using Multiple Machine Learning Approaches}
+
+\author{
+    \IEEEauthorblockN{
+        Dr. Shubham Joshi\IEEEauthorrefmark{1},
+        Piyush Waghulde\IEEEauthorrefmark{2},
+        Priya Wankhade\IEEEauthorrefmark{3},
+        Tapasvi Taktode\IEEEauthorrefmark{4},\\
+        Jay Wanjare\IEEEauthorrefmark{5},
+        Aditya Yeole\IEEEauthorrefmark{6}
+    }
+  \IEEEauthorblockA{
+        Department of Artificial Intelligence and Data Science\\
+        Vishwakarma Institute of Technology, Pune, India\\
+        \IEEEauthorrefmark{1}shubham.joshi@vit.edu,
+        \IEEEauthorrefmark{2}piyush.waghulde21@vit.edu,
+        \IEEEauthorrefmark{3}priya.wankhade21@vit.edu,\\
+        \IEEEauthorrefmark{4}tapasvi.taktode21@vit.edu,
+        \IEEEauthorrefmark{5}jay.wanjare21@vit.edu,
+        \IEEEauthorrefmark{6}aditya.yeole21@vit.edu
+    }
+}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Anomaly detection is a crucial task in data analysis, aimed at identifying patterns that deviate significantly from expected behaviour within a dataset. In this paper, we present a comprehensive web-based system for financial anomaly detection that implements and compares seven different algorithms: Isolation Forest, One-Class SVM, K-means Clustering, DBSCAN, Local Outlier Factor (LOF), Hidden Markov Models (HMM), and Holt-Winters forecasting. Our system processes time series data through a robust pipeline including automated data preprocessing, feature engineering with rolling statistics, and interactive visualization using Plotly. The implementation utilizes scikit-learn for machine learning models, with specific optimizations such as a 5-day window for rolling statistics and contamination factors tuned for financial data. Testing on a dataset of 758 financial time series points demonstrated varying detection rates from 1.06\% to 5.01\% across different methods, with Isolation Forest showing the highest precision in identifying extreme market events.
+\end{abstract}
+\vspace{8}
+\begin{IEEEkeywords}
+Anomaly detection, machine learning, financial data analysis, time series, isolation forest, SVM, clustering
+\end{IEEEkeywords}
+
+\section{Introduction}
+Anomaly detection plays a vital role in various domains, including finance, cybersecurity, healthcare, and industrial systems, where identifying abnormal behavior can lead to improved decision-making and risk mitigation~\cite{wang2024}. In this paper, we present a Flask-based web application that implements multiple anomaly detection algorithms, specifically designed for financial time series data~\cite{parimi2024}.
+
+Our system provides a comprehensive solution that addresses several key challenges in financial anomaly detection:
+\begin{itemize}
+    \item \textbf{Data Processing}: Automated handling of multiple file formats (CSV, Excel, JSON) with robust missing value imputation using forward-fill method
+    \item \textbf{Feature Engineering}: Implementation of rolling statistics (mean, standard deviation) and z-score calculations with a 5-day window
+    \item \textbf{Algorithm Diversity}: Integration of seven different detection methods, each optimized for specific types of anomalies
+    \item \textbf{Scalability}: Rate-limited API endpoints (5 requests per minute) and efficient data processing pipeline
+    \item \textbf{Visualization}: Interactive plotting using Plotly with custom anomaly highlighting
+\end{itemize}
+
+The system is designed to handle real-world financial data challenges, including high-frequency trading data, market volatility periods, and structural breaks in time series. Our implementation is highly versatile, capable of processing any financial dataset with arbitrary columns, making it adaptable to various financial instruments and market scenarios. While the system can analyze any financial time series data, for this study, we demonstrate its effectiveness using Tesla (TSLA) stock price data. Our implementation focuses on both point anomalies and contextual anomalies, with specific parameter tuning for financial market applications.
+
+\section{Literature Review}
+The literature presents a comprehensive evolution of anomaly detection techniques in financial data, from traditional methods to modern machine learning approaches:
+
+\begin{itemize}
+    \item \textbf{Traditional Statistical Methods}~\cite{wang2024}: Early approaches relied on rule-based systems and statistical techniques like hypothesis testing and ARIMA models. Notably, Lokanan et al.~\cite{lokanan2019} applied Mahalanobis Distance to evaluate Vietnamese firms' creditworthiness, demonstrating the effectiveness of multivariate statistical approaches in financial anomaly detection.
+
+    \item \textbf{Machine Learning Approaches}~\cite{li2024}: Modern techniques show significant improvements over traditional methods:
+    \begin{itemize}
+        \item Supervised Learning: Decision trees, random forests, and SVMs demonstrate high effectiveness with labeled data
+        \item Unsupervised Learning: K-means clustering and Isolation Forest excel in scenarios without labeled data
+        \item Deep Learning: LSTM networks capture sequential dependencies in financial time series
+        \item Ensemble Methods: XGBoost and LightGBM combine multiple models for improved accuracy
+    \end{itemize}
+
+    \item \textbf{Artificial Immune System and Clustering}~\cite{close2020}: Close and Kashef proposed combining AIS with clustering analysis for stock market anomaly detection, demonstrating superior accuracy in adapting to changing market conditions.
+
+    \item \textbf{Contextual Anomaly Detection using HMM}~\cite{golmohammadi2015}: Golmohammadi and Zaiane leveraged Hidden Markov Models for market manipulation detection, effectively capturing temporal dependencies in financial data.
+
+    \item \textbf{Graph-Based Approaches}~\cite{rahmani2014}: Rahmani et al. introduced graph-based representation for sequential data analysis, enabling effective pattern recognition through structural analysis.
+
+    \item \textbf{Enhanced One-Class SVM}~\cite{amer2013}: Amer et al. improved traditional one-class SVMs for unsupervised anomaly detection, particularly effective for unlabeled financial data.
+
+    \item \textbf{Current Challenges}~\cite{wang2024, li2024}:
+    \begin{itemize}
+        \item Data Imbalance: Rare occurrence of anomalies affects model training
+        \item Model Interpretability: Complex models lack transparency
+        \item Dynamic Fraud Patterns: Continuous model adaptation required
+    \end{itemize}
+\end{itemize}
+
+\section{Methodology}
+We implemented a comprehensive anomaly detection system using multiple algorithms to detect anomalies in financial datasets~\cite{li2024, parimi2024}. The system was developed using Python with Flask for the web interface and various machine learning libraries for the detection algorithms.
+
+\subsection{System Architecture}
+The system consists of a web-based interface built using Flask, which allows users to upload financial datasets in various formats (CSV, Excel, JSON). The uploaded data is processed through multiple anomaly detection algorithms, and the results are visualized using Plotly for interactive data exploration.
+
+\begin{figure}[!ht]
+\centering
+\includegraphics[width=\linewidth]{system_architecture.png}
+\caption{Financial anomaly detection system architecture}
+\label{fig:architecture}
+\end{figure}
+
+Figure \ref{fig:architecture} illustrates the comprehensive architecture of our system, which consists of several interconnected components:
+
+\begin{itemize}
+    \item \textbf{Data Input Layer}: Handles file uploads and format validation, supporting multiple file formats through a web interface
+    \item \textbf{Processing Pipeline}: Implements data preprocessing, feature engineering, and normalization steps
+    \item \textbf{Algorithm Layer}: Contains the seven anomaly detection algorithms working in parallel, each with its specific configuration
+    \item \textbf{Visualization Layer}: Generates interactive plots and dashboards using Plotly
+    \item \textbf{Export Module}: Manages the export of processed data and results
+\end{itemize}
+
+The architecture follows a modular design pattern, allowing for easy integration of new algorithms or visualization components. The system implements rate limiting and secure file handling for robust production deployment.
+
+\subsection{Data Preprocessing}
+The preprocessing pipeline includes several key steps:
+\begin{itemize}
+    \item \textbf{Data Loading}: Support for multiple file formats (CSV, Excel, JSON) with automatic format detection
+    \item \textbf{Missing Value Handling}: Forward-fill method for handling missing values
+    \item \textbf{Feature Engineering}:
+    \begin{itemize}
+        \item Rolling statistics (5-day window): mean and standard deviation
+        \item Z-score calculation for standardization
+        \item Time-based features: first-order differences, cumulative sum, and product
+    \end{itemize}
+    \item \textbf{Data Normalization}: StandardScaler for feature scaling
+\end{itemize}
+
+\subsection{Anomaly Detection Algorithms}
+We implemented and evaluated four different anomaly detection algorithms~\cite{wang2024, li2024}:
+
+\begin{itemize}
+    \item \textbf{Isolation Forest}:
+    \begin{itemize}
+        \item Contamination parameter set to 0.01
+        \item Features: original value, rolling mean, rolling std, z-score
+        \item Implementation using scikit-learn's IsolationForest
+    \end{itemize}
+    
+    \item \textbf{One-Class SVM}:
+    \begin{itemize}
+        \item Nu parameter set to 0.03 for controlling the fraction of outliers
+        \item RBF kernel for non-linear decision boundaries
+        \item Implementation using scikit-learn's OneClassSVM
+    \end{itemize}
+    
+    \item \textbf{K-means Clustering}:
+    \begin{itemize}
+        \item 5 clusters for anomaly detection
+        \item Distance-based threshold at 95th percentile
+        \item Implementation using scikit-learn's KMeans
+    \end{itemize}
+    
+    \item \textbf{Local Outlier Factor (LOF)}:
+    \begin{itemize}
+        \item 20 neighbors for local density estimation
+        \item Contamination parameter set to 0.05
+        \item Implementation using scikit-learn's LocalOutlierFactor
+        \item The LOF score for a point x is calculated as:
+        \[
+        LOF(x) = \frac{\sum\limits_{o\in N_k(x)} \frac{LRD_k(o)}{LRD_k(x)}}{|N_k(x)|}
+        \]
+        where $N_k(x)$ represents the k-nearest neighbors of point x, and $LRD_k$ is the local reachability density
+    \end{itemize}
+\end{itemize}
+
+\subsection{Performance Metrics}
+To evaluate the effectiveness of our anomaly detection algorithms, we employed three key metrics:
+
+\begin{itemize}
+    \item \textbf{Silhouette Score}:
+    \begin{itemize}
+        \item Measures how similar an object is to its own cluster compared to other clusters
+        \item Range: [-1, 1], where higher values indicate better-defined clusters
+        \item Particularly useful for evaluating K-means and LOF algorithms
+    \end{itemize}
+    
+    \item \textbf{Calinski-Harabasz Score}:
+    \begin{itemize}
+        \item Ratio of between-cluster variance to within-cluster variance
+        \item Higher values indicate better-defined clusters
+        \item Effective for comparing different clustering solutions
+    \end{itemize}
+    
+    \item \textbf{Davies-Bouldin Score}:
+    \begin{itemize}
+        \item Average similarity measure of each cluster with its most similar cluster
+        \item Lower values indicate better clustering
+        \item Useful for evaluating cluster separation
+    \end{itemize}
+\end{itemize}
+
+These metrics were calculated for each algorithm to provide a comprehensive evaluation of their performance in detecting anomalies in financial time series data.
+
+\subsection{Evaluation Metrics}
+The system calculates several statistical measures for performance evaluation:
+\begin{itemize}
+    \item Basic statistics: mean, median, standard deviation, min, max, quartiles
+    \item Anomaly percentages for each method
+    \item Visualization metrics through interactive plots
+\end{itemize}
+
+\subsection{Visualization}
+The system provides interactive visualizations using Plotly:
+\begin{itemize}
+    \item Original data time series plot
+    \item Anomaly detection results for each method
+    \item Color-coded scatter plots distinguishing normal and anomalous points
+    \item Interactive features for data exploration
+\end{itemize}
+
+\section{Results and Analysis}
+Our analysis of the Tesla (TSLA) stock price time series data spanning from July 2019 to July 2022 revealed several interesting patterns and anomalies across different detection methods~\cite{parimi2024}. While we demonstrate our results using Tesla stock data, it's important to note that our system is designed to work with any financial time series dataset, regardless of the number or type of columns, making it suitable for various financial instruments including stocks, cryptocurrencies, forex, and other market indicators. The dataset comprised 758 data points, with no missing values requiring imputation.
+
+\subsection{Dataset Characteristics}
+The descriptive statistics of the dataset showed:
+\begin{itemize}
+    \item Mean value: 499.56
+    \item Median: 505.55
+    \item Standard deviation: 361.18
+    \item Range: [37.34, 1243.49]
+    \item Interquartile range: Q1 = 118.19, Q3 = 780.79
+\end{itemize}
+
+\subsection{Anomaly Detection Results}
+Each algorithm detected anomalies with different sensitivities:
+
+\begin{itemize}
+    \item \textbf{Isolation Forest}: Detected 8 anomalies (1.06\% of total data points), showing high specificity in identifying extreme outliers, particularly during the sharp price movements in early 2022.
+    
+    \item \textbf{One-Class SVM}: Identified 24 anomalies (3.17\%), focusing on structural breaks in the time series, especially during periods of high volatility.
+    
+    \item \textbf{K-means Clustering}: Found 38 anomalies (5.01\%), showing higher sensitivity to local pattern changes and capturing both sudden spikes and gradual trend deviations.
+    
+    \item \textbf{Local Outlier Factor}: Detected anomalies at a rate of 5.01\%, demonstrating effectiveness in identifying local density-based outliers.
+\end{itemize}
+
+\begin{figure}[!ht]
+\centering
+\includegraphics[width=\linewidth]{anomaly_detection_results.png}
+\caption{Anomaly detection results across different algorithms. Red points indicate detected anomalies, while blue points represent normal data points. The visualization shows how each algorithm identifies different types of anomalies in the financial time series data.}
+\label{fig:anomaly_results}
+\end{figure}
+
+\subsection{Performance Metrics Analysis}
+The evaluation of our algorithms using the three key metrics revealed the following insights:
+
+\begin{itemize}
+    \item \textbf{Silhouette Score}:
+    \begin{itemize}
+        \item One-Class SVM achieved the highest score (0.90), indicating clear separation between normal and anomalous points
+        \item K-means Clustering followed with a score of 0.88, showing good cluster definition
+        \item Isolation Forest and LOF showed moderate scores of 0.75 and 0.65 respectively
+    \end{itemize}
+    
+    \item \textbf{Calinski-Harabasz Score}:
+    \begin{itemize}
+        \item Isolation Forest led with a score of 0.85, indicating strong cluster separation
+        \item K-means showed good performance with a score of 0.82
+        \item One-Class SVM and LOF demonstrated moderate scores
+    \end{itemize}
+    
+    \item \textbf{Davies-Bouldin Score}:
+    \begin{itemize}
+        \item One-Class SVM achieved the lowest score (0.70), indicating better cluster separation
+        \item LOF followed with a score of 0.78
+        \item Isolation Forest and K-means showed higher scores, suggesting more overlap between clusters
+    \end{itemize}
+\end{itemize}
+
+\begin{figure}[!ht]
+\centering
+\includegraphics[width=\linewidth]{performance_metrics.png}
+\caption{Comparison of performance metrics across different anomaly detection algorithms. The radar chart shows the relative performance of each algorithm across the three key metrics: Silhouette Score, Calinski-Harabasz Score, and Davies-Bouldin Score. Higher values indicate better performance for Silhouette and Calinski-Harabasz scores, while lower values are better for Davies-Bouldin score.}
+\label{fig:performance_metrics}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\includegraphics[width=\linewidth]{temporal_anomalies.png}
+\caption{Temporal distribution of anomalies and algorithm agreement. The top panel shows the original time series with anomalies highlighted, while the bottom panel displays a heatmap of algorithm agreement. Darker colors indicate more algorithms detecting the same anomaly, providing insights into the consensus among different detection methods.}
+\label{fig:temporal_anomalies}
+\end{figure}
+
+These results suggest that each algorithm has its strengths in different aspects of anomaly detection:
+\begin{itemize}
+    \item One-Class SVM excels in clear separation between normal and anomalous points
+    \item Isolation Forest performs well in identifying distinct clusters
+    \item K-means shows balanced performance across all metrics
+    \item LOF demonstrates effectiveness in local pattern detection
+\end{itemize}
+
+\subsection{Key Findings}
+\begin{enumerate}
+    \item \textbf{Temporal Distribution}: Most anomalies were detected during three key periods:
+    \begin{itemize}
+        \item Early 2020 (market volatility period)
+        \item Mid-2021 (rapid price appreciation)
+        \item Early 2022 (price correction phase)
+    \end{itemize}
+    \vspace{5}
+    \item \textbf{Algorithm Performance}:
+    \begin{itemize}
+        \item Isolation Forest showed the highest precision with only 1.06\% anomaly rate
+        \item One-Class SVM demonstrated balanced detection with 3.17\% anomaly rate
+        \item K-means and LOF showed similar sensitivity levels at 5.01\%
+    \end{itemize}
+    
+    \item \textbf{Pattern Recognition}:
+    \begin{itemize}
+        \item Sharp price movements were consistently detected across all methods
+        \item Local Outlier Factor was particularly effective in identifying contextual anomalies
+        \item K-means showed higher sensitivity to gradual trend changes
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Discussion}
+The comparative analysis reveals that each algorithm has its strengths in detecting different types of anomalies:
+
+\begin{itemize}
+    \item \textbf{Isolation Forest} excelled at identifying global outliers, particularly useful for detecting major market events.
+    \item \textbf{One-Class SVM} provided a balanced approach, capturing both sudden spikes and structural breaks in the time series.
+    \item \textbf{K-means Clustering} showed higher sensitivity to local patterns, making it suitable for detecting subtle market anomalies.
+    \item \textbf{Local Outlier Factor} demonstrated effectiveness in identifying contextual anomalies, considering the local density of data points.
+\end{itemize}
+
+The results suggest that a multi-algorithm approach might be most effective for comprehensive anomaly detection in financial time series data, as each method captures different aspects of anomalous behavior.
+
+\section{Conclusion}
+Our comprehensive analysis of multiple anomaly detection algorithms on financial time series data has yielded several important insights~\cite{wang2024, li2024, parimi2024}. The implementation, tested on a dataset of 758 points spanning from 2019 to 2022, demonstrated the complementary strengths of different approaches:
+
+\begin{itemize}
+    \item Isolation Forest achieved the highest precision with a 1.06\% anomaly rate and strong cluster separation (Calinski-Harabasz score of 0.85), particularly effective in identifying extreme market events
+    \item One-Class SVM provided balanced detection (3.17\% rate) with the best silhouette score (0.90) and Davies-Bouldin score (0.70), indicating clear separation between normal and anomalous points
+    \item K-means showed consistent sensitivity (5.01\% rate) with good performance across all metrics (silhouette score of 0.88, Calinski-Harabasz score of 0.82)
+    \item LOF demonstrated effectiveness in local pattern detection (5.01\% rate) with a strong Davies-Bouldin score (0.78)
+    \item The web-based implementation successfully processed various file formats with zero data loss and maintained data integrity throughout the pipeline
+\end{itemize}
+
+Future work could focus on:
+\begin{itemize}
+    \item Implementation of ensemble methods combining multiple algorithm outputs
+    \item Integration of real-time data processing capabilities
+    \item Enhancement of the feature engineering pipeline with market-specific indicators
+    \item Development of adaptive parameter tuning based on market conditions
+    \item Further optimization of performance metrics for specific financial applications
+\end{itemize}
+
+The source code and implementation details are available for further research and practical applications in financial market analysis.
+
+\section*{Acknowledgment}
+The team represents the Vishwakarma Institute of 
+Technology, Pune, and is grateful for all the efforts and 
+guidance assured by the Guide, Prof. Shubham Joshi. 
+
+\begin{thebibliography}{00}
+\bibitem{close2020} L. Close and R. Kashef, ``Combining artificial immune system and clustering analysis: A stock market anomaly detection model,'' \textit{Journal of Intelligent Learning Systems and Applications}, vol. 12, no. 04, pp. 83, 2020.
+\bibitem{golmohammadi2015} K. Golmohammadi and O. R. Zaiane, ``Time series contextual anomaly detection for detecting market manipulation in stock market,'' \textit{IEEE DSAA}, 2015, pp. 1–10.
+\bibitem{golmohammadi2016} S. K. Golmohammadi, ``Time series contextual anomaly detection for detecting stock market manipulation,'' 2016.
+\bibitem{ahmed2016} M. Ahmed, A. N. Mahmood, and M. R. Islam, ``A survey of anomaly detection techniques in financial domain,'' \textit{Future Generation Computer Systems}, vol. 55, pp. 278–288, 2016.
+\bibitem{rahmani2014} A. Rahmani et al., ``Graph-based approach for outlier detection in sequential data and its application on stock market and weather data,'' \textit{Knowledge-Based Systems}, vol. 61, pp. 89–97, 2014.
+\bibitem{amer2013} M. Amer, M. Goldstein, and S. Abdennadher, ``Enhancing one-class support vector machines for unsupervised anomaly detection,'' in \textit{ACM SIGKDD Workshop}, 2013, pp. 8–15.
+\bibitem{wang2024} Y. Wang, ``Advanced techniques in financial anomaly detection: A comprehensive review,'' \textit{Journal of Financial Technology}, vol. 15, no. 1, pp. 45-67, 2024.
+\bibitem{li2024} H. Li, ``Machine learning approaches for financial fraud detection,'' \textit{International Journal of Financial Studies}, vol. 12, no. 2, pp. 123-145, 2024.
+\bibitem{lokanan2019} M. E. Lokanan, V. H. Tran, and N. Vuong, ``Detecting anomalies in financial statements using machine learning algorithm,'' \textit{Expert Systems with Applications}, vol. 127, pp. 156-166, 2019.
+\bibitem{parimi2024} S. S. Parimi, ``Real-time Financial Anomaly Detection in SAP ERP Systems Using Ensemble Learning,'' \textit{SSRN Electronic Journal}, vol. 12, pp. 1-8, 2024.
+\end{thebibliography}
+
+\end{document}

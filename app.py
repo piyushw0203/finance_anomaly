@@ -3,18 +3,17 @@ import os
 import pandas as pd
 from sklearn.ensemble import IsolationForest
 from sklearn.svm import OneClassSVM
-from sklearn.cluster import DBSCAN
+from sklearn.cluster import KMeans
 from werkzeug.utils import secure_filename
 import plotly.express as px
 from plotly.offline import plot
 from flask_limiter.util import get_remote_address
 from flask_limiter import Limiter
-from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 import numpy as np
 from sklearn.neighbors import LocalOutlierFactor
-from hmmlearn.hmm import GaussianHMM
-from statsmodels.tsa.holtwinters import ExponentialSmoothing
+# from statsmodels.tsa.holtwinters import ExponentialSmoothing
+# from hmmlearn.hmm import GaussianHMM
 
 
 
@@ -120,25 +119,25 @@ def process_file():
             fig.add_scatter(x=anomalies.index, y=anomalies['Value'], mode='markers', marker=dict(color="red", size=5), name='Anomaly')
         return plot(fig, output_type='div')
 
-    def train_HMM(series, n_components=4, n_iter=1000):
-        model = GaussianHMM(n_components=n_components, covariance_type="diag", n_iter=n_iter)
-        model.fit(series.reshape(-1, 1))
-        return model
+    # def train_HMM(series, n_components=4, n_iter=1000):
+    #     model = GaussianHMM(n_components=n_components, covariance_type="diag", n_iter=n_iter)
+    #     model.fit(series.reshape(-1, 1))
+    #     return model
     
-    def detect_anomalies_HMM(model, values, indices, threshold=-10):
-        log_likelihood = np.array([model.score(np.array([val]).reshape(-1, 1)) for val in values])
-        anomaly_indices = np.where(log_likelihood < threshold)[0]
-        anomalies = pd.DataFrame({'Value': values[anomaly_indices]}, index=indices[anomaly_indices])
-        return anomalies
+    # def detect_anomalies_HMM(model, values, indices, threshold=-10):
+    #     log_likelihood = np.array([model.score(np.array([val]).reshape(-1, 1)) for val in values])
+    #     anomaly_indices = np.where(log_likelihood < threshold)[0]
+    #     anomalies = pd.DataFrame({'Value': values[anomaly_indices]}, index=indices[anomaly_indices])
+    #     return anomalies
 
 
-    def train_holt_winters(series, seasonal_periods, trend='add', seasonal='add'):
-        model = ExponentialSmoothing(series, trend=trend, seasonal=seasonal, seasonal_periods=seasonal_periods)
-        hw_model = model.fit()
-        return hw_model
+    # def train_holt_winters(series, seasonal_periods, trend='add', seasonal='add'):
+    #     model = ExponentialSmoothing(series, trend=trend, seasonal=seasonal, seasonal_periods=seasonal_periods)
+    #     hw_model = model.fit()
+    #     return hw_model
     
-    def forecast_holt_winters(hw_model, steps=10):
-        return hw_model.forecast(steps=steps)
+    # def forecast_holt_winters(hw_model, steps=10):
+    #     return hw_model.forecast(steps=steps)
 
 
 
@@ -173,28 +172,55 @@ def process_file():
     plot_svm = plot_anomalies(data, anomalies_svm, 'One-Class SVM')
 
     # Local Outlier Factor (LOF)
-    model_lof = LocalOutlierFactor(n_neighbors=20, contamination=0.05)
-    data['anomaly_lof'] = model_lof.fit_predict(data[['Value']])
+    # Simpler feature engineering for LOF
+    data['rolling_mean'] = data['Value'].rolling(window=3).mean()  # Shorter window for more local sensitivity
+    data['rolling_std'] = data['Value'].rolling(window=3).std()
+    data['diff'] = data['Value'].diff()
+    data['diff_abs'] = data['diff'].abs()
+    
+    # Fill NaN values created by rolling windows
+    data = data.fillna(method='bfill').fillna(method='ffill')
+    
+    # Prepare features for LOF - using simpler feature set
+    lof_features = ['Value', 'rolling_mean', 'diff_abs']
+    
+    # Scale the features
+    scaler = StandardScaler()
+    lof_data = scaler.fit_transform(data[lof_features])
+    
+    # Optimize LOF parameters for better sensitivity
+    model_lof = LocalOutlierFactor(
+        n_neighbors=15,  # Reduced for more local sensitivity
+        contamination=0.01,  # Reduced to be more selective
+        metric='manhattan',  # Changed to manhattan distance for better handling of differences
+        algorithm='auto',
+        leaf_size=20,
+        p=1,  # Changed to 1 for manhattan distance
+        novelty=False
+    )
+    
+    # Fit and predict
+    data['anomaly_lof'] = model_lof.fit_predict(lof_data)
     anomalies_lof = data[data['anomaly_lof'] == -1]
     plot_lof = plot_anomalies(data, anomalies_lof, 'Local Outlier Factor')
 
 
-    # Normalize the data and apply DBSCAN
-    scaler = StandardScaler()
-    data_normalized = scaler.fit_transform(data[['Value']].values.reshape(-1, 1))
-    dbscan = DBSCAN(eps=0.5, min_samples=5)
-    data['anomaly_dbscan'] = dbscan.fit_predict(data_normalized)
-    anomalies_dbscan = data[data['anomaly_dbscan'] == -1]
-    plot_dbscan = plot_anomalies(data, anomalies_dbscan, 'DBSCAN')
+    # # Normalize the data and apply DBSCAN
+    # scaler = StandardScaler()
+    # data_normalized = scaler.fit_transform(data[['Value']].values.reshape(-1, 1))
+    # dbscan = DBSCAN(eps=0.5, min_samples=5)
+    # data['anomaly_dbscan'] = dbscan.fit_predict(data_normalized)
+    # anomalies_dbscan = data[data['anomaly_dbscan'] == -1]
+    # plot_dbscan = plot_anomalies(data, anomalies_dbscan, 'DBSCAN')
 
 
-    # Train HMM
-    hmm_model = train_HMM(data['Value'].values)
+    # # Train HMM
+    # hmm_model = train_HMM(data['Value'].values)
 
-    # Detect anomalies using HMM
-    anomalies_hmm = detect_anomalies_HMM(hmm_model, data['Value'].values, data['Value'].index)
+    # # Detect anomalies using HMM
+    # anomalies_hmm = detect_anomalies_HMM(hmm_model, data['Value'].values, data['Value'].index)
 
-    plot_hmm = plot_anomalies(data, anomalies_hmm, 'HMM')
+    # plot_hmm = plot_anomalies(data, anomalies_hmm, 'HMM')
 
     # The data is good due to its weights toward newer information 
 
@@ -210,36 +236,82 @@ def process_file():
     data['diff'] = data['Value'].diff()
     data['cumsum'] = data['Value'].cumsum()
     data['cumprod'] = (1 + data['Value']).cumprod()
-    mean = data['Value'].mean()
-    median = data['Value'].median()
-    std = data['Value'].std()
-    min_val = data['Value'].min()
-    max_val = data['Value'].max()
-    q25 = data['Value'].quantile(0.25)
-    q75 = data['Value'].quantile(0.75)
+    mean = round(data['Value'].mean(), 2)
+    median = round(data['Value'].median(), 2)
+    std = round(data['Value'].std(), 2)
+    min_val = round(data['Value'].min(), 2)
+    max_val = round(data['Value'].max(), 2)
+    q25 = round(data['Value'].quantile(0.25), 2)
+    q75 = round(data['Value'].quantile(0.75), 2)
+
+    # Performance Evaluation Metrics
+    def calculate_silhouette_score(data, labels):
+        from sklearn.metrics import silhouette_score
+        try:
+            return round(silhouette_score(data[['Value']], labels), 3)
+        except:
+            return None
+
+    def calculate_calinski_harabasz_score(data, labels):
+        from sklearn.metrics import calinski_harabasz_score
+        try:
+            return round(calinski_harabasz_score(data[['Value']], labels), 3)
+        except:
+            return None
+
+    def calculate_davies_bouldin_score(data, labels):
+        from sklearn.metrics import davies_bouldin_score
+        try:
+            return round(davies_bouldin_score(data[['Value']], labels), 3)
+        except:
+            return None
+
+    # Calculate performance metrics for each algorithm
+    performance_metrics = {
+        'K-means': {
+            'silhouette': calculate_silhouette_score(data, data['anomaly_kmeans']),
+            'calinski_harabasz': calculate_calinski_harabasz_score(data, data['anomaly_kmeans']),
+            'davies_bouldin': calculate_davies_bouldin_score(data, data['anomaly_kmeans'])
+        },
+        'Isolation Forest': {
+            'silhouette': calculate_silhouette_score(data, data['anomaly_if']),
+            'calinski_harabasz': calculate_calinski_harabasz_score(data, data['anomaly_if']),
+            'davies_bouldin': calculate_davies_bouldin_score(data, data['anomaly_if'])
+        },
+        'SVM': {
+            'silhouette': calculate_silhouette_score(data, data['anomaly_svm']),
+            'calinski_harabasz': calculate_calinski_harabasz_score(data, data['anomaly_svm']),
+            'davies_bouldin': calculate_davies_bouldin_score(data, data['anomaly_svm'])
+        },
+        'LOF': {
+            'silhouette': calculate_silhouette_score(data, data['anomaly_lof']),
+            'calinski_harabasz': calculate_calinski_harabasz_score(data, data['anomaly_lof']),
+            'davies_bouldin': calculate_davies_bouldin_score(data, data['anomaly_lof'])
+        }
+    }
+
+    # Create performance metrics table
+    performance_table = pd.DataFrame(performance_metrics).T
+    performance_table = performance_table.to_html(classes='table table-striped', index=True)
 
     # Anomaly Statistics
     total_anomalies_iso = len(data[data['anomaly_if'] == -1])
-    percentage_anomalies_iso = (total_anomalies_iso / count) * 100
+    percentage_anomalies_iso = round((total_anomalies_iso / count) * 100, 2)
 
     total_anomalies_svm = len(data[data['anomaly_svm'] == -1])
-    percentage_anomalies_svm = (total_anomalies_svm / count) * 100
+    percentage_anomalies_svm = round((total_anomalies_svm / count) * 100, 2)
 
     total_anomalies_kmeans = len(data[data['anomaly_kmeans'] == 1])
-    percentage_anomalies_kmeans = (total_anomalies_kmeans / count) * 100
-
-    total_anomalies_dbscan = len(data[data['anomaly_dbscan'] == -1])
-    percentage_anomalies_dbscan = (total_anomalies_dbscan / count) * 100
+    percentage_anomalies_kmeans = round((total_anomalies_kmeans / count) * 100, 2)
 
     total_anomalies_lof = len(data[data['anomaly_lof'] == -1])
-    percentage_anomalies_lof = (total_anomalies_lof / count) * 100
+    percentage_anomalies_lof = round((total_anomalies_lof / count) * 100, 2)
 
     # Find common anomalies across all algorithms
     data['common_anomaly'] = (
         (data['anomaly_if'] == -1) & 
         (data['anomaly_svm'] == -1) & 
         (data['anomaly_kmeans'] == 1) & 
-        (data['anomaly_dbscan'] == -1) & 
         (data['anomaly_lof'] == -1)
     )
     
@@ -247,7 +319,6 @@ def process_file():
     print("Isolation Forest anomalies:", len(data[data['anomaly_if'] == -1]))
     print("SVM anomalies:", len(data[data['anomaly_svm'] == -1]))
     print("K-means anomalies:", len(data[data['anomaly_kmeans'] == 1]))
-    print("DBSCAN anomalies:", len(data[data['anomaly_dbscan'] == -1]))
     print("LOF anomalies:", len(data[data['anomaly_lof'] == -1]))
     
     # Create a more lenient common anomaly detection
@@ -256,7 +327,6 @@ def process_file():
         (data['anomaly_if'] == -1).astype(int) +
         (data['anomaly_svm'] == -1).astype(int) +
         (data['anomaly_kmeans'] == 1).astype(int) +
-        (data['anomaly_dbscan'] == -1).astype(int) +
         (data['anomaly_lof'] == -1).astype(int)
     )
     
@@ -265,7 +335,7 @@ def process_file():
     
     common_anomalies = data[data['common_anomaly'] == True].sort_index()
     common_anomalies_count = len(common_anomalies)
-    percentage_common_anomalies = (common_anomalies_count / count) * 100
+    percentage_common_anomalies = round((common_anomalies_count / count) * 100, 2)
 
     # Create a table of common anomalies with more information
     common_anomalies_table = common_anomalies[['Value', 'anomaly_count']].reset_index()
@@ -287,8 +357,8 @@ def process_file():
     def generate_one_class_svm_plot(data, anomalies):
         return plot_anomalies(data, anomalies, 'anomaly_svm', 'One-Class SVM Anomalies')
 
-    def generate_dbscan_plot(data, anomalies):
-        return plot_anomalies(data, anomalies, 'anomaly_dbscan', 'DBSCAN Anomalies')
+    # def generate_dbscan_plot(data, anomalies):
+    #     return plot_anomalies(data, anomalies, 'anomaly_dbscan', 'DBSCAN Anomalies')
 
     def generate_kmeans_plot(data, anomalies):
         return plot_anomalies(data, anomalies, 'cluster', 'KMeans Anomalies')
@@ -296,16 +366,16 @@ def process_file():
     def generate_lof_plot(data, anomalies):
         return plot_anomalies(data, anomalies, 'anomaly_lof', 'Local Outlier Factor Anomalies')
     
-    def generate_hmm_plot(data, anomalies):
-        return plot_anomalies(data, anomalies, 'anomalies_hmm', 'HMM Anomalies')
+    # def generate_hmm_plot(data, anomalies):
+    #     return plot_anomalies(data, anomalies, 'anomalies_hmm', 'HMM Anomalies')
     
-    def generate_hw_plot(data, anomalies):
-        return plot_anomalies(data, anomalies, 'hw_forecast', 'HW Forecast ')
+    # def generate_hw_plot(data, anomalies):
+    #     return plot_anomalies(data, anomalies, 'hw_forecast', 'HW Forecast ')
     
 
 # Returning the plotting functions for verification
     # generate_isolation_forest_plot, generate_one_class_svm_plot, generate_dbscan_plot, generate_kmeans_plot, generate_lof_plot,generate_hmm_plot,generate_hw_plot
-    generate_isolation_forest_plot, generate_one_class_svm_plot, generate_kmeans_plot, generate_lof_plot,generate_hmm_plot,generate_hw_plot
+    generate_isolation_forest_plot, generate_one_class_svm_plot, generate_kmeans_plot, generate_lof_plot
 
     # Exporting the processed data
     export_filename = f"processed_{filename}"
@@ -317,15 +387,11 @@ def process_file():
                            original_plot=original_plot,
                            anomalies_if=anomalies_if,
                            anomalies_svm=anomalies_svm,
-                           anomalies_dbscan=anomalies_dbscan,
                            plot_kmeans=plot_kmeans,
                            plot_if=plot_if,
                            plot_svm=plot_svm,
-                           plot_dbscan=plot_dbscan,
                            anomalies_lof=anomalies_lof,
                            plot_lof=plot_lof,
-                           anomalies_hmm=anomalies_hmm,
-                           plot_hmm=plot_hmm,
                            export_filename=export_filename,
                            count=count,
                            original_count=original_count,
@@ -344,12 +410,12 @@ def process_file():
                            percentage_anomalies_svm=percentage_anomalies_svm,
                            total_anomalies_kmeans=total_anomalies_kmeans,
                            percentage_anomalies_kmeans=percentage_anomalies_kmeans,
-                           total_anomalies_dbscan=total_anomalies_dbscan,
-                           percentage_anomalies_dbscan=percentage_anomalies_dbscan,
+                           total_anomalies_lof=total_anomalies_lof,
                            percentage_anomalies_lof=percentage_anomalies_lof,
                            common_anomalies_table=common_anomalies_table,
                            common_anomalies_count=common_anomalies_count,
-                           percentage_common_anomalies=percentage_common_anomalies
+                           percentage_common_anomalies=percentage_common_anomalies,
+                           performance_table=performance_table
                            )
 
 @app.route('/download/<filename>')
